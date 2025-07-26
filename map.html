@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Set character encoding and responsive layout -->
+  <meta charset="UTF-8" />
+  <title>Hate Crime Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Load D3.js for data visualization and the external CSS stylesheet -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- 🔹 Main heading and filters -->
+  <div class="chart-background">
+    <h1>🗺️ Hate Crimes by Province</h1>
+    <p>This interactive map displays hate crime counts across Canadian provinces by year.</p>
+
+    <!-- Navigation and filter controls -->
+    <div style="text-align: center;">
+      <button onclick="window.location.href='index.html'" style="margin: 10px;">🏠 Back to Home</button><br />
+
+      <!-- Year dropdown filter -->
+      <label for="yearSelect">Select Year:</label>
+      <select id="yearSelect" style="margin-right: 15px;"></select>
+
+      <!-- Motivation multi-select filter -->
+      <label for="motivationSelect">Filter by Motivation:</label>
+      <select id="motivationSelect" multiple size="3" style="min-width: 200px; vertical-align: middle;"></select>
+
+      <!-- Clear filters and export map options -->
+      <button id="clearMotivations">Clear Filter</button>
+      <button id="exportBtn">🖼️ Export Map</button>
+    </div>
+  </div>
+
+  <!-- 🔹 SVG Map and Gradient Legend -->
+  <div class="chart-background">
+    <div id="map"></div>
+
+    <!-- Color legend explaining low-to-high values -->
+    <div class="legend-container">
+      <svg width="200" height="40" class="legend">
+        <defs>
+          <linearGradient id="legendGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+            <stop offset="0%" stop-color="#fee5d9" />
+            <stop offset="100%" stop-color="#a50f15" />
+          </linearGradient>
+        </defs>
+        <rect x="10" y="10" width="160" height="10" fill="url(#legendGradient)"></rect>
+        <text x="10" y="30">Low</text>
+        <text x="170" y="30" text-anchor="end">High</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- 🔹 Motivation bar chart section -->
+  <div class="chart-background" style="margin-top: 40px;">
+    <h2 id="provinceTitle">📊 Hate Crime Motivations by Province</h2>
+    <p>Click a province on the map to see the breakdown of hate crime motivations for the selected year.</p>
+    <div id="plot"></div>
+  </div>
+
+  <!-- Tooltip for the map interaction -->
+  <div class="tooltip-map" id="mapTooltip"></div>
+
+  <!-- 🔹 Explanation of grouped data (e.g. territories, Atlantic region) -->
+  <details style="margin-top: 20px; max-width: 700px; font-size: 14px; color: #ddd;">
+    <summary><strong>Note on regional calculation (click to expand)</strong></summary>
+    <ul>
+      <li><strong>Atlantic Region:</strong> Distributed proportionally based on population:
+        <ul>
+          <li>Newfoundland and Labrador: 30%</li>
+          <li>Nova Scotia: 29%</li>
+          <li>New Brunswick: 24%</li>
+          <li>Prince Edward Island: 17%</li>
+        </ul>
+      </li>
+      <li><strong>Territories:</strong> Distributed as:
+        <ul>
+          <li>Northwest Territories: 47%</li>
+          <li>Nunavut: 29%</li>
+          <li>Yukon: 24%</li>
+        </ul>
+      </li>
+    </ul>
+    <p><strong>Sources:</strong></p>
+    <ul>
+      <li><a href="https://www12.statcan.gc.ca/census-recensement/index-eng.cfm" target="_blank">2021 Census Profile</a></li>
+      <li><a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000501" target="_blank">Population estimates</a></li>
+    </ul>
+  </details>
+
+  <!-- 🔹 Map visualization and motivation chart logic -->
+  <script>
+    // Set the width and height of the SVG map
+    const width = 960, height = 600;
+
+    // Create the SVG container inside #map
+    const svg = d3.select("#map").append("svg")
+      .attr("viewBox", `0 0 ${width} ${height}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
+      .style("width", "100%");
+    // Tooltip div for hover interaction
+    const tooltip = d3.select("#mapTooltip");
+    const yearSelect = d3.select("#yearSelect");
+
+    // Function to clean region names for consistent comparison
+    const cleanRegion = name => name
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/\s?\[\d+\]$/, '')
+      .trim()
+      .toLowerCase();
+
+    // Load both GeoJSON and CSV datasets
+    Promise.all([
+      d3.json("ca.json"),
+      d3.csv("hate_speech_dataset.csv")
+    ]).then(([geoData, crimeData]) => {
+      const provinces = geoData;
+
+      // Extract unique years and motivations for dropdowns
+      const allYears = Array.from(new Set(crimeData.map(d => +d.REF_DATE))).sort();
+      const allMotivations = Array.from(new Set(crimeData.map(d => d["Type of motivation"].trim()))).sort();
+
+      // Populate motivation dropdown
+      d3.select("#motivationSelect").selectAll("option")
+        .data(allMotivations)
+        .enter().append("option")
+        .attr("value", d => d)
+        .text(d => d);
+
+      // Populate year dropdown
+      yearSelect.selectAll("option")
+        .data(allYears)
+        .enter().append("option")
+        .attr("value", d => d)
+        .text(d => d);
+
+      // Define projection and geoPath
+      const projection = d3.geoConicConformal()
+        .parallels([49, 77])
+        .rotate([100, 0])
+        .fitSize([width, height], geoData);
+      const path = d3.geoPath().projection(projection);
+
+      // Main function to update the map
+      function updateMap(selectedYear) {
+  const selectedMotivations = Array.from(document.getElementById("motivationSelect").selectedOptions).map(opt => opt.value);
+  const filtered = crimeData.filter(d =>
+    +d.REF_DATE === selectedYear &&
+    d.VALUE &&
+    !isNaN(+d.VALUE) &&
+    (selectedMotivations.length === 0 || selectedMotivations.includes(d["Type of motivation"].trim()))
+  );
+
+  const regionCounts = {};
+  const motivationData = {};
+
+  filtered.forEach(d => {
+    const rawRegion = d.GEO.trim();
+    const region = cleanRegion(rawRegion);
+    const motivation = d["Type of motivation"].trim();
+    const count = +d.VALUE;
+  // Handle special aggregation cases for Atlantic and Territories
+    if (region === "atlantic") {
+      const atlanticShares = {
+        "nova scotia": 0.29,
+        "new brunswick": 0.24,
+        "newfoundland and labrador": 0.30,
+        "prince edward island": 0.17
+      };
+      for (const prov in atlanticShares) {
+        const share = atlanticShares[prov];
+        regionCounts[prov] = (regionCounts[prov] || 0) + count * share;
+        if (!motivationData[prov]) motivationData[prov] = {};
+        motivationData[prov][motivation] = (motivationData[prov][motivation] || 0) + count * share;
+      }
+    } else if (region === "territories") {
+      const territoryShares = {
+        "northwest territories": 0.47,
+        "nunavut": 0.29,
+        "yukon": 0.24
+      };
+      for (const prov in territoryShares) {
+        const share = territoryShares[prov];
+        regionCounts[prov] = (regionCounts[prov] || 0) + count * share;
+        if (!motivationData[prov]) motivationData[prov] = {};
+        motivationData[prov][motivation] = (motivationData[prov][motivation] || 0) + count * share;
+      }
+    // Aggregate counts and motivation for standard provinces
+    } else {
+      regionCounts[region] = (regionCounts[region] || 0) + count;
+      if (!motivationData[region]) motivationData[region] = {};
+      motivationData[region][motivation] = (motivationData[region][motivation] || 0) + count;
+    }
+  });
+
+  const maxCount = d3.max(Object.values(regionCounts));
+  const color = d3.scaleSequential(d3.interpolateReds).domain([0, maxCount]);
+
+  svg.selectAll("path").remove();
+  svg.selectAll("text.label").remove();
+
+  svg.selectAll("path")
+    .data(provinces.features)
+    .enter().append("path")
+    .attr("d", path)
+    .attr("fill", d => {
+      const name = cleanRegion(d.properties.name);
+      return regionCounts[name] ? color(regionCounts[name]) : "#eee";
+    })
+    .attr("stroke", "#999")
+    .attr("stroke-width", 1)
+    .attr("opacity", 0.8)
+    .on("mouseover", (event, d) => {
+      const name = cleanRegion(d.properties.name);
+      const count = regionCounts[name] || 0;
+      tooltip
+        .html(`<strong>${d.properties.name}</strong><br>${Math.round(count)} incidents`)
+        .style("opacity", 1);
+      d3.select(event.currentTarget)
+        .attr("opacity", 1)
+        .attr("stroke-width", 2);
+    })
+    .on("mousemove", (event) => {
+      tooltip
+        .style("left", event.pageX + 15 + "px")
+        .style("top", event.pageY - 28 + "px");
+    })
+    .on("mouseout", (event) => {
+      tooltip.interrupt().transition().delay(300).duration(300).style("opacity", 0);
+      d3.select(event.currentTarget)
+        .attr("opacity", 0.8)
+        .attr("stroke-width", 1);
+    })
+    .on("click", (event, d) => {
+      const region = cleanRegion(d.properties.name);
+      if (motivationData[region]) renderMotivationChart(region, motivationData[region]);
+    });
+    // Add province abbreviations (e.g., ON, BC) to the map
+
+  svg.selectAll("text.label")
+    .data(provinces.features)
+    .enter().append("text")
+    .attr("class", "label")
+    .attr("x", d => path.centroid(d)[0])
+    .attr("y", d => path.centroid(d)[1])
+    .attr("text-anchor", "middle")
+    .attr("font-size", "10px")
+    .attr("fill", "#333")
+    .text(d => d.properties.postal);
+}
+    // Render bar chart for clicked province
+      function renderMotivationChart(region, data) {
+        const formattedRegion = region.replace(/\b\w/g, c => c.toUpperCase());
+        d3.select("#provinceTitle").text(`📊 Hate Crime Motivations in ${formattedRegion}`);
+
+        d3.select("#plot").html("");
+
+        // Map long labels to short ones for axis space
+        const labelMap = {
+          "Race or ethnicity": "Race.",
+          "Religion": "Rel.",
+          "Sexual orientation": "Sex. O.",
+          "Gender": "Gend.",
+          "Other motivation": "Oth."
+        };
+
+        // Convert motivation data to array format
+        const motivations = Object.entries(data).map(([key, value]) => ({
+          motivation: labelMap[key] || key,
+          fullLabel: key,
+          count: value
+        }));
+
+        const margin = { top: 30, right: 30, bottom: 40, left: 120 };
+        const width = 600 - margin.left - margin.right;
+        const height = 300 - margin.top - margin.bottom;
+
+        // Create SVG container for chart
+        const svg = d3.select("#plot")
+          .append("svg")
+          .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+          .attr("preserveAspectRatio", "xMidYMid meet")
+          .style("width", "100%")
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Y: motivations, X: counts
+        const y = d3.scaleBand()
+          .domain(motivations.map(d => d.motivation))
+          .range([0, height])
+          .padding(0.2);
+
+        const x = d3.scaleLinear()
+          .domain([0, d3.max(motivations, d => d.count)])
+          .nice()
+          .range([0, width]);
+
+        svg.append("g").call(d3.axisLeft(y).tickSize(0)).selectAll("text").style("font-size", "13px");
+        svg.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(x).ticks(5));
+
+        const colorScale = d3.scaleOrdinal()
+          .domain(["Race.", "Rel.", "Sex. O.", "Gend.", "Oth."])
+          .range(["#de2d26", "#fc9272", "#9ecae1", "#6baed6", "#bcbddc"]);
+
+        const tooltip = d3.select(".tooltip-map");
+
+        // Draw motivation bars
+        svg.selectAll("rect")
+          .data(motivations)
+          .enter().append("rect")
+          .attr("y", d => y(d.motivation))
+          .attr("x", 0)
+          .attr("height", y.bandwidth())
+          .attr("width", 0)
+          .attr("fill", d => colorScale(d.motivation))
+          .on("mouseover", (event, d) => {
+            tooltip
+              .html(`<strong>${d.fullLabel}</strong>: ${d.count}`)
+              .style("opacity", 1);
+            const baseColor = d3.color(d3.select(event.currentTarget).attr("fill"));
+            if (baseColor) d3.select(event.currentTarget).attr("fill", baseColor.darker(1));
+          })
+          .on("mousemove", (event) => {
+            tooltip
+              .style("left", event.pageX + 15 + "px")
+              .style("top", event.pageY - 28 + "px");
+          })
+          .on("mouseout", (event, d) => {
+            tooltip.interrupt().transition().delay(300).duration(300).style("opacity", 0);
+            const baseColor = d3.color(colorScale(d.motivation));
+            if (baseColor) d3.select(event.currentTarget).attr("fill", baseColor);
+          })
+          .transition()
+          .duration(1000)
+          .attr("width", d => x(d.count));
+      }
+
+      // Initialize map with most recent year
+      updateMap(allYears[allYears.length - 1]);
+
+      // Dropdown & button interactivity
+      yearSelect.on("change", function () {
+        updateMap(+this.value);
+      });
+
+      d3.select("#motivationSelect").on("change", () => {
+        const year = +yearSelect.property("value");
+        updateMap(year);
+      });
+
+      d3.select("#clearMotivations").on("click", () => {
+        d3.select("#motivationSelect").selectAll("option").property("selected", false);
+        updateMap(+yearSelect.property("value"));
+      });
+
+      d3.select("#exportBtn").on("click", () => {
+        const svgNode = document.querySelector("#map svg");
+        const serializer = new XMLSerializer();
+        const svgString = serializer.serializeToString(svgNode);
+        const blob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "canada_map.svg";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    });
+  </script>
+  <details id="mapInfoDetails">
+    <summary><strong>What is a hate crime and why does it matter?</strong></summary>
+    <p>
+      A hate crime is a criminal act motivated by bias or prejudice against a person or group based on race, ethnicity, religion, sexual orientation, gender identity, or other protected characteristics. These crimes not only harm individuals but also spread fear and trauma throughout entire communities.
+    </p>
+  
+    <p>
+      In Canada, hate crimes are rising. According to 
+      <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3510019101&cubeTimeFrame.startYear=2014&cubeTimeFrame.endYear=2023&referencePeriods=20140101%2C20230101" target="_blank">
+        Statistics Canada
+      </a>, police-reported hate crimes increased from 
+      <strong>1,295 in 2014 to 4,777 in 2023</strong> — an increase of over <strong>269%</strong>. This dashboard was developed to help visualize this alarming trend across Canadian provinces and explore the motivations behind these incidents.
+    </p>
+    <p>
+      If you are a victim or witness of a hate crime, it is important to report the incident to local police. Support is also available through provincial and municipal services, including trauma counseling, legal support, and anti-violence advocacy organizations.
+    </p>
+  </details>
+  <!-- Footer with student name and ID -->
+  <footer class="custom-footer">
+    Ayşegül Dahi | Student ID: 300387536
+  </footer>
+</body>
+</html>

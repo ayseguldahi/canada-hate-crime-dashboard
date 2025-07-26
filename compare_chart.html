@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Set character encoding and page title -->
+  <meta charset="UTF-8" />
+  <title>Compare Cities or Years</title>
+
+  <!-- Enable responsive design for all devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Load D3.js for visualization logic and an external stylesheet -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- 🔹 Header and Filter Section -->
+  <!-- Displays the title and provides interactive dropdowns to choose comparison mode -->
+  <div class="chart-background">
+    <h1 id="compareTitle">🔍 Compare Hate Crime Motivations</h1>
+    <p>Select comparison mode and view motivation breakdowns side-by-side.</p>
+
+    <!-- Navigation and filter dropdowns -->
+    <div style="text-align: center;">
+      <button onclick="window.location.href='index.html'" style="margin: 10px;">🏠 Back to Home</button><br />
+
+      <!-- User chooses to compare by city or year -->
+      <label for="modeSelect" style="margin-right: 5px;">Comparison Mode:</label>
+      <select id="modeSelect" style="margin-right: 20px;">
+        <option value="cities">Compare Cities</option>
+        <option value="years">Compare Years</option>
+      </select>
+
+      <!-- Dropdowns for filtering -->
+      <label for="sharedSelect" id="sharedLabel" style="margin-right: 5px;">Year:</label>
+      <select id="sharedSelect" style="margin-right: 20px;"></select>
+
+      <label for="leftSelect" id="leftLabel" style="margin-right: 5px;">City A:</label>
+      <select id="leftSelect" style="margin-right: 10px;"></select>
+
+      <label for="rightSelect" id="rightLabel" style="margin-right: 5px;">City B:</label>
+      <select id="rightSelect"></select>
+    </div>
+  </div>
+
+  <!-- 🔹 Chart Section -->
+  <!-- Side-by-side charts for visual comparison -->
+  <div class="chart-background" style="display: flex; gap: 40px; margin-top: 40px;">
+    <div id="chartLeft" style="flex: 1;"></div>
+    <div id="chartRight" style="flex: 1;"></div>
+  </div>
+
+  <!-- Tooltip shown on hover for bar charts -->
+  <div class="tooltip" style="opacity: 0; position: absolute;"></div>
+
+  <!-- External script where the data is cleaned and formatted -->
+  <script src="script.js"></script>
+
+  <script>
+    // Main script: loads clean data from script.js, sets up dropdowns and charts
+    loadAndCleanData(data => {
+      // Extract unique values for dropdowns
+      const allMotivations = Array.from(new Set(data.map(d => d.motivation)));
+      const cities = Array.from(new Set(data.map(d => d.region))).sort();
+      const years = Array.from(new Set(data.map(d => d.year))).sort();
+
+      // Link dropdowns to D3
+      const modeSelect = d3.select("#modeSelect");
+      const sharedSelect = d3.select("#sharedSelect");
+      const leftSelect = d3.select("#leftSelect");
+      const rightSelect = d3.select("#rightSelect");
+
+      // Populate a dropdown with values
+      function populateDropdown(select, values) {
+        select.selectAll("option").remove();
+        select.selectAll("option")
+          .data(values)
+          .enter()
+          .append("option")
+          .attr("value", d => d)
+          .text(d => d);
+      }
+
+      // Update dropdown labels and values based on selected mode
+      function updateUI() {
+        const mode = modeSelect.property("value");
+
+        if (mode === "cities") {
+          d3.select("#sharedLabel").text("Year:");
+          d3.select("#leftLabel").text("City A:");
+          d3.select("#rightLabel").text("City B:");
+          populateDropdown(sharedSelect, years);
+          populateDropdown(leftSelect, cities);
+          populateDropdown(rightSelect, cities);
+        } else {
+          d3.select("#sharedLabel").text("City:");
+          d3.select("#leftLabel").text("Year A:");
+          d3.select("#rightLabel").text("Year B:");
+          populateDropdown(sharedSelect, cities);
+          populateDropdown(leftSelect, years);
+          populateDropdown(rightSelect, years);
+        }
+
+        updateCharts(); // Redraw charts
+      }
+
+      // Filter data and render both bar charts
+      function updateCharts() {
+        const mode = modeSelect.property("value");
+        const shared = sharedSelect.property("value");
+        const left = leftSelect.property("value");
+        const right = rightSelect.property("value");
+
+        let leftFiltered = [], rightFiltered = [];
+
+        // Filter data based on selected comparison mode
+        if (mode === "cities") {
+          leftFiltered = data.filter(d => d.region === left && d.year === +shared);
+          rightFiltered = data.filter(d => d.region === right && d.year === +shared);
+          d3.select("#compareTitle").text(`🔍 Hate Crime Comparison in ${shared}: ${left} vs ${right}`);
+        } else {
+          leftFiltered = data.filter(d => d.region === shared && d.year === +left);
+          rightFiltered = data.filter(d => d.region === shared && d.year === +right);
+          d3.select("#compareTitle").text(`🔍 ${shared}: Hate Crimes in ${left} vs ${right}`);
+        }
+
+        // Prepare data format for chart rendering
+        const prepareChartData = filtered => {
+          return allMotivations.map(motivation => {
+            const entry = filtered.find(d => d.motivation === motivation);
+            return { motivation, count: entry ? entry.count : 0 };
+          });
+        };
+
+        // Render the two comparison bar charts
+        renderSideChart("#chartLeft", prepareChartData(leftFiltered));
+        renderSideChart("#chartRight", prepareChartData(rightFiltered));
+      }
+
+      // Listen for changes to dropdowns
+      d3.selectAll("#sharedSelect, #leftSelect, #rightSelect").on("change", updateCharts);
+      modeSelect.on("change", updateUI);
+
+      updateUI(); // Initial setup
+    });
+
+    // Draws a single vertical bar chart in the specified container
+    function renderSideChart(container, chartData) {
+      d3.select(container).html(""); // Clear any existing chart
+
+      // Define margins and chart size
+      const margin = { top: 40, right: 20, bottom: 100, left: 60 };
+      const width = 400 - margin.left - margin.right;
+      const height = 400 - margin.top - margin.bottom;
+
+      // Create the SVG container
+      const svg = d3.select(container)
+        .append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        .attr("preserveAspectRatio", "xMidYMid meet")
+        .style("width", "100%")
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+      // X-axis: motivation types
+      const x = d3.scaleBand()
+        .domain(chartData.map(d => d.motivation))
+        .range([0, width])
+        .padding(0.3);
+
+      // Y-axis: hate crime counts
+      const y = d3.scaleLinear()
+        .domain([0, d3.max(chartData, d => d.count)])
+        .nice()
+        .range([height, 0]);
+
+      // Draw x-axis with rotated labels
+      svg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x))
+        .selectAll("text")
+        .attr("transform", "rotate(-35)")
+        .style("text-anchor", "end");
+
+      // Draw y-axis
+      svg.append("g").call(d3.axisLeft(y));
+
+      // Tooltip element
+      const tooltip = d3.select(".tooltip");
+
+      // Draw bars and attach tooltip events
+      svg.selectAll("rect")
+        .data(chartData)
+        .enter()
+        .append("rect")
+        .attr("x", d => x(d.motivation))
+        .attr("width", x.bandwidth())
+        .attr("y", y(0)) // Start height from bottom
+        .attr("height", 0) // Initial bar height for animation
+        .attr("class", d => {
+          const cls = d.motivation.toLowerCase().replace(/[^a-z]/g, '-');
+          return `bar-${cls}`;
+        })
+        .on("mouseover", function (event, d) {
+          tooltip.transition().duration(200).style("opacity", 1);
+          tooltip.html(`<strong>${d.motivation}</strong><br>${d.count} incidents`)
+            .style("left", event.pageX + 10 + "px")
+            .style("top", event.pageY - 28 + "px");
+        })
+        .on("mousemove", function (event) {
+          tooltip.style("left", event.pageX + 10 + "px")
+                 .style("top", event.pageY - 28 + "px");
+        })
+        .on("mouseout", function () {
+          tooltip.transition().duration(300).style("opacity", 0);
+        })
+        .transition()
+        .duration(800)
+        .attr("y", d => y(d.count))
+        .attr("height", d => height - y(d.count));
+
+      // Add text labels above bars
+      svg.selectAll("text.label")
+        .data(chartData)
+        .enter()
+        .append("text")
+        .attr("x", d => x(d.motivation) + x.bandwidth() / 2)
+        .attr("y", d => y(d.count) - 5)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "12px")
+        .attr("fill", "#333")
+        .text(d => d.count > 0 ? d.count : "")
+        .style("opacity", 0)
+        .transition()
+        .delay(800)
+        .duration(400)
+        .style("opacity", 1);
+    }
+  </script>
+   <details id="mapInfoDetails">
+    <summary><strong>What is a hate crime and why does it matter?</strong></summary>
+    <p>
+      A hate crime is a criminal act motivated by bias or prejudice against a person or group based on race, ethnicity, religion, sexual orientation, gender identity, or other protected characteristics. These crimes not only harm individuals but also spread fear and trauma throughout entire communities.
+    </p>
+  
+    <p>
+      In Canada, hate crimes are rising. According to 
+      <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3510019101&cubeTimeFrame.startYear=2014&cubeTimeFrame.endYear=2023&referencePeriods=20140101%2C20230101" target="_blank">
+        Statistics Canada
+      </a>, police-reported hate crimes increased from 
+      <strong>1,295 in 2014 to 4,777 in 2023</strong> — an increase of over <strong>269%</strong>. This dashboard was developed to help visualize this alarming trend across Canadian provinces and explore the motivations behind these incidents.
+    </p>
+    <p>
+      If you are a victim or witness of a hate crime, it is important to report the incident to local police. Support is also available through provincial and municipal services, including trauma counseling, legal support, and anti-violence advocacy organizations.
+    </p>
+  </details>
+  <!-- Footer section with student info -->
+  <footer class="custom-footer">
+    Ayşegül Dahi | Student ID: 300387536
+  </footer>
+</body>
+</html>

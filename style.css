@@ -1,0 +1,242 @@
+/* --------------------
+ Global Layout & Background
+--------------------- */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-image: url('hate crime.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: #f5f5f5;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+/* --------------------
+ Containers
+--------------------- */
+.container {
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 40px;
+  max-width: 800px;
+  margin: 60px auto;
+  border-radius: 10px;
+}
+
+.chart-background {
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 20px;
+  border-radius: 12px;
+  margin: 30px 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------
+ Headings & Paragraphs
+--------------------- */
+h1, h2 {
+  text-align: center;
+  color: #f9f9f9;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+h2 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-top: 40px;
+}
+
+p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #f0f0f0;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* --------------------
+ Navigation Buttons
+--------------------- */
+nav {
+  margin-top: 30px;
+}
+
+nav button {
+  margin: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #3e3b32;
+  color: #f5f5f5;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+nav button:hover {
+  background-color: #b3925a;
+}
+
+/* --------------------
+ Footer
+--------------------- */
+footer {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+/* --------------------
+ Chart Containers
+--------------------- */
+#chart {
+  margin-top: 40px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* --------------------
+ Tooltip Styles
+--------------------- */
+.tooltip,
+.line-tooltip,
+.tooltip-map {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.tooltip:hover,
+.tooltip-map:hover {
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+/* --------------------
+ <details> section for map notes
+--------------------- */
+details {
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 20px;
+  border-radius: 10px;
+  color: #f0f0f0;
+  max-width: 900px;
+  margin: 20px auto;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  line-height: 1.6;
+}
+
+details summary {
+  font-weight: bold;
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+details ul {
+  padding-left: 20px;
+  margin-top: 10px;
+}
+
+details li {
+  margin-bottom: 5px;
+}
+
+details strong {
+  color: #fdd47b;
+}
+
+details a {
+  color: #91cfff;
+  text-decoration: underline;
+}
+
+/* --------------------
+ Legend container for map
+--------------------- */
+.legend-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px auto;
+  padding: 10px;
+}
+
+.legend {
+  font-size: 12px;
+}
+
+.legend text {
+  fill: #fff;
+  font-weight: bold;
+}
+
+/* --------------------
+ Custom Footer Styling
+--------------------- */
+.custom-footer {
+  background-color: rgba(0, 0, 0, 0.8);
+  text-align: center;
+  padding: 15px;
+  margin-top: 40px;
+  font-size: 0.95rem;
+  color: #f5f5f5;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  border-radius: 8px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* --------------------
+ Map Motivation Color Palette + Hover Effects
+--------------------- */
+.bar-race-or-ethnicity {
+  fill: #de2d26;
+}
+.bar-religion {
+  fill: #fc9272;
+}
+.bar-sexual-orientation {
+  fill: #9ecae1;
+}
+.bar-gender {
+  fill: #6baed6;
+}
+.bar-other {
+  fill: #bcbddc;
+}
+
+.bar-race-or-ethnicity:hover {
+  filter: brightness(1.2);
+  stroke: white;
+  stroke-width: 1px;
+  cursor: pointer;
+}
+.bar-religion:hover,
+.bar-sexual-orientation:hover,
+.bar-gender:hover,
+.bar-other:hover {
+  filter: brightness(1.2);
+  stroke: white;
+  stroke-width: 1px;
+  cursor: pointer;
+}
