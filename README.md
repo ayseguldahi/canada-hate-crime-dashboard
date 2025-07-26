@@ -46,7 +46,7 @@ The project allows users to interactively filter, explore, and analyze hate crim
 ## 🧩 Dataset Source
 
 - **Title:** Police-reported hate crime by type of motivation  
-- **Source:** Statistics Canada  
+- **Source:** Statistics Canada (https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3510006601&cubeTimeFrame.startYear=2014&cubeTimeFrame.endYear=2023&referencePeriods=20140101%2C20230101)
 - **Years Covered:** 2014–2023  
 - **Total Records:** 300+
 
