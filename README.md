@@ -4,7 +4,11 @@
 
 ## 📊 Project Overview
 
-This interactive D3.js project visualizes police-reported hate crime data across Canadian provinces from 2014 to 2023. The dashboard is split across three pages:
+Hate crimes are criminal offenses motivated by bias, prejudice, or hate against a person's race, religion, gender, sexual orientation, or other identity. These acts target not just individuals but the social groups they represent, and they can deeply affect entire communities. In Canada, hate crimes are a serious and growing concern. According to Statistics Canada, police-reported hate crimes increased by over 269% between 2014 (1,295 incidents) and 2023 (4,777 incidents). The most commonly targeted groups include race or ethnicity, religion, and sexual orientation.
+
+What to do if you or someone you know experiences a hate crime: In Canada, victims are encouraged to report hate crimes to local police services. Provincial and local organizations also provide support for trauma, legal help, and community safety.
+
+This dashboard explores Canada's police-reported hate crimes from 2014 to 2023. You can view trends over time, compare motivations by region and year, and interact with a geospatial map. The data comes from Statistics Canada's Table 35-10-0191-01. This interactive D3.js project visualizes, police-reported hate crime data across Canadian provinces from 2014 to 2023. The dashboard is split across three pages:
 
 - **Line Chart:** View national and regional hate crime trends over time.
 - **Comparative Bar Chart:** Compare hate crime motivations between years or cities.
