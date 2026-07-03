@@ -2,7 +2,7 @@
  🇨🇦 Canada Hate Crime Dashboard (2014–2023)
 ---
 
-## 📊 Project Overview
+## Project Overview
 
 Hate crimes are criminal offenses motivated by bias, prejudice, or hate against a person's race, religion, gender, sexual orientation, or other identity. These acts target not just individuals but the social groups they represent, and they can deeply affect entire communities. In Canada, hate crimes are a serious and growing concern. According to Statistics Canada, police-reported hate crimes increased by over 269% between 2014 (1,295 incidents) and 2023 (4,777 incidents). The most commonly targeted groups include race or ethnicity, religion, and sexual orientation.
 
@@ -18,7 +18,7 @@ The project allows users to interactively filter, explore, and analyze hate crim
 
 ---
 
-## 📁 Folder Structure
+## Folder Structure
 
 ```
 📁 Proj_Aysegul_D_536
@@ -36,7 +36,7 @@ The project allows users to interactively filter, explore, and analyze hate crim
 
 ---
 
-## 🛠️ How to Run
+## How to Run
 
 1. Open folder in VS Code.
 2. Install the **Live Server** extension.
@@ -47,7 +47,7 @@ The project allows users to interactively filter, explore, and analyze hate crim
 
 ---
 
-## 🧩 Dataset Source
+## Dataset Source
 
 - **Title:** Police-reported hate crime by type of motivation  
 - **Source:** Statistics Canada (https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3510006601&cubeTimeFrame.startYear=2014&cubeTimeFrame.endYear=2023&referencePeriods=20140101%2C20230101)
@@ -60,21 +60,21 @@ The project allows users to interactively filter, explore, and analyze hate crim
 
 ---
 
-## 📈 Page Descriptions
+## Page Descriptions
 
-### 1️⃣ Line Chart
+### Line Chart
 
 - **Chart 1:** Trends by motivation in a selected province
 - **Chart 2:** National totals vs. specific motivation
 - **Features:** Tooltip, percent change, dropdown filters, stroke-draw animation
 
-### 2️⃣ Comparative Bar Chart
+### Comparative Bar Chart
 
 - **Mode 1:** Compare 2 cities in the same year
 - **Mode 2:** Compare the same city across 2 years
 - **Features:** Hover tooltips, transition bars, label fades, side-by-side comparison
 
-### 3️⃣ Geospatial Map
+### Geospatial Map
 
 - **Interactive Map** of Canada for a selected year
 - **Click a Province:** Horizontal bar chart shows motivation distribution
@@ -97,7 +97,7 @@ if (region === "atlantic") {
 
 ---
 
-## 🧠 Insights to Explore
+## Insights to Explore
 
 - Which provinces have persistently high hate crime counts?
 - Do certain motivations dominate in specific regions?
@@ -105,7 +105,7 @@ if (region === "atlantic") {
 
 ---
 
-## 🖥️ Dashboard UX Design
+## Dashboard UX Design
 
 - **Navigation:** Index links to all pages with return buttons
 - **Responsive Layout:** Adapts to browser sizes (desktop, tablet)
