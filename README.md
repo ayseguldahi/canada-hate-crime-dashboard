@@ -1,8 +1,9 @@
 
- 🇨🇦 Canada Hate Crime Dashboard (2014–2023)
+Hate Crime Dashboard (2014–2023)
 ---
 
 ## Project Overview
+🔗 **Live Demo:** https://ayseguldahi.github.io/canada-hate-crime-dashboard/
 
 Hate crimes are criminal offenses motivated by bias, prejudice, or hate against a person's race, religion, gender, sexual orientation, or other identity. These acts target not just individuals but the social groups they represent, and they can deeply affect entire communities. In Canada, hate crimes are a serious and growing concern. According to Statistics Canada, police-reported hate crimes increased by over 269% between 2014 (1,295 incidents) and 2023 (4,777 incidents). The most commonly targeted groups include race or ethnicity, religion, and sexual orientation.
 
